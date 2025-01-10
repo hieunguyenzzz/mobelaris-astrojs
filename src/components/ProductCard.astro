@@ -1,0 +1,38 @@
+ ---
+const {product} = Astro.props
+ ---
+ 
+ <div class="product-card">
+  <h2>{product.title}</h2>
+    <p>{product.description}</p>
+    <p>Price: {product.variants[0]?.prices[0]?.amount / 100} {product.variants[0]?.prices[0]?.currency_code}</p>
+   <a href={`/products/${product.id}`}>View Details</a>
+</div>
+ 
+<style>
+    .product-card {
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: white;
+        text-align: center;
+    }
+    
+     .product-card h2 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+     }
+ 
+    .product-card p {
+     margin-bottom: 10px;
+    }
+
+ 
+     .product-card a {
+        text-decoration: none;
+        color: white;
+        background-color: #007bff;
+        padding: 8px 12px;
+        border-radius: 4px;
+     }
+</style>

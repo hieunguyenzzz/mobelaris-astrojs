@@ -1,11 +1,42 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import { getProducts } from '../utils/medusa';
+import ProductCard from '../components/ProductCard.astro'
+import Header from '../components/Header.astro';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const { products } = await getProducts();
+
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width" />
+  <meta name="generator" content={Astro.generator} />
+  <title>Astro Medusa</title>
+</head>
+<body>
+  <Header />
+  <main>
+  <h1>Products</h1>
+   {products && products.length > 0 ? (
+     <div class="products-grid">
+       {products.map(product => (
+         <ProductCard product={product} />
+       ))}
+     </div>
+   ) : <p>No Products</p>}
+  </main>
+</body>
+</html>
+
+<style>
+   .products-grid {
+       display: grid;
+       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+       gap: 20px;
+       padding: 20px;
+       margin: auto;
+       max-width: 1400px;
+     }
+</style>
