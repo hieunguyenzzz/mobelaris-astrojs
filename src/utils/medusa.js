@@ -29,3 +29,13 @@ export async function addCartItem(cartId, variantId, quantity) {
     quantity: quantity
   })
 }
+
+export async function updateCartItem(cartId, lineItemId, quantity) {
+  return await medusa.carts.lineItems.update(cartId, lineItemId, {
+    quantity: quantity
+  })
+}
+
+export async function deleteCartItem(cartId, lineItemId) {
+  return await medusa.carts.lineItems.delete(cartId, lineItemId)
+}
