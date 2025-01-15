@@ -1,0 +1,37 @@
+---
+import { getProduct } from '../utils/medusa';
+import Header from '../components/Header.astro';
+import { getProducts } from '../utils/medusa';
+
+export async function getStaticPaths() {
+    const { products } = await getProducts();
+  
+    return products.flatMap((product: any) => {
+        const paths = product.variants.map((variant: any) => ({
+            params: { handle: variant.metadata?.handle || product.id },
+            props: { 
+                productId: product.id,
+                variantHandle: variant.metadata?.handle || null 
+            }
+        }));
+        return paths;
+    });
+}
+
+const { productId, variantHandle } = Astro.props;
+const { product } = await getProduct(productId);
+const defaultVariant = variantHandle 
+    ? product.variants.find((v: any) => v.metadata?.handle === variantHandle) 
+    : product.variants[0];
+const defaultImages = defaultVariant?.metadata?.images || [product.thumbnail];
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{product.title}</title>
+  </head>
+  <body>
+    <Header />
+    <!-- Copy the rest of your product page template here -->
+  </body>
+</html> 

@@ -1,12 +1,23 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {addCartItem, createCart, getCart} from '../utils/medusa';
 
 interface AddToCartProps {
   variants: any[];
+  onVariantChange?: (variant: any) => void;
+  initialVariantHandle?: string;
 }
 
-const AddToCart: React.FC<AddToCartProps> = ({variants}) => {
-  const [selectedVariant, setSelectedVariant] = useState(variants[0]);
+const AddToCart: React.FC<AddToCartProps> = ({
+  variants, 
+  onVariantChange,
+  initialVariantHandle
+}) => {
+  // Find initial variant based on handle or default to first variant
+  const initialVariant = initialVariantHandle 
+    ? variants.find(v => v.metadata?.handle === initialVariantHandle)
+    : variants[0];
+
+  const [selectedVariant, setSelectedVariant] = useState(initialVariant);
   const [quantity, setQuantity] = useState(1);
   const [cartId, setCartId] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
@@ -17,6 +28,25 @@ const AddToCart: React.FC<AddToCartProps> = ({variants}) => {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (onVariantChange) {
+      onVariantChange(selectedVariant);
+    }
+  }, []);
+
+  const handleVariantChange = (variantId: string) => {
+    const variant = variants.find(v => v.id === variantId);
+    if (variant) {
+      setSelectedVariant(variant);
+      if (onVariantChange) {
+        onVariantChange(variant);
+      }
+      // Update URL to just the variant handle
+      const newUrl = `/${variant.metadata?.handle || ''}`;
+      window.history.pushState({}, '', newUrl);
+    }
+  };
 
   const handleAddClick = async () => {
     setLoading(true)
@@ -55,12 +85,13 @@ const AddToCart: React.FC<AddToCartProps> = ({variants}) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '300px' }}>
       <select 
         value={selectedVariant.id}
-        onChange={(e) => setSelectedVariant(variants.find(v => v.id === e.target.value))}
+        onChange={(e) => handleVariantChange(e.target.value)}
         style={{
-          padding: '0.5rem',
+          padding: '0.75rem',
           borderRadius: '4px',
-          border: '1px solid #ccc',
-          marginBottom: '0.5rem'
+          border: '1px solid #e2e8f0',
+          marginBottom: '0.5rem',
+          width: '100%'
         }}
       >
         {variants.map((variant) => (
@@ -80,19 +111,20 @@ const AddToCart: React.FC<AddToCartProps> = ({variants}) => {
             padding: '0.5rem',
             width: '80px',
             borderRadius: '4px',
-            border: '1px solid #ccc'
+            border: '1px solid #e2e8f0'
           }}
         />
         <button 
           onClick={handleAddClick} 
           disabled={loading}
           style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: loading ? '#ccc' : '#2c5282',
+            padding: '0.75rem 1.5rem',
+            backgroundColor: loading ? '#cbd5e0' : '#2c5282',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer'
+            cursor: loading ? 'not-allowed' : 'pointer',
+            flex: 1
           }}
         >
           {loading ? 'Adding...' : 'Add to Cart'}

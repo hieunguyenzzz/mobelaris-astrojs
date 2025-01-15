@@ -1,4 +1,5 @@
 ---
+import type { Product } from '@medusajs/medusa';
 import { getProduct, getProducts } from '../../utils/medusa';
 import AddToCart from '../../components/AddToCart';
 import Header from '../../components/Header.astro';
@@ -6,21 +7,30 @@ import Header from '../../components/Header.astro';
 export async function getStaticPaths() {
     const { products } = await getProducts();
   
-    return products.map((product: any) => ({
+    return products.map((product: Product) => ({
         params: { id: product.id },
     }));
 }
 
 const { id } = Astro.params;
+const { variantHandle } = Astro.props;
 const { product } = await getProduct(id);
+
+// Find the initial variant based on handle or default to first variant
+const defaultVariant = variantHandle 
+    ? product.variants.find((v: any) => v.metadata?.handle === variantHandle) 
+    : product.variants[0];
+
+const defaultImages = defaultVariant?.metadata?.images || [product.thumbnail];
 ---
+
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>Product Details</title>
+    <title>{product.title} - Product Details</title>
     <style>
       main {
         max-width: 1200px;
@@ -30,46 +40,183 @@ const { product } = await getProduct(id);
 
       .product-container {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 2rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4rem;
+      }
+
+      .product-images {
+        position: relative;
+      }
+
+      .main-image {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+      }
+
+      .thumbnail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .thumbnail {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+      }
+
+      .thumbnail:hover {
+        opacity: 0.8;
+        border-color: #2c5282;
       }
 
       .product-info {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 1.5rem;
       }
 
       h1 {
         font-size: 2.5rem;
-        color: #333;
-        margin-bottom: 1rem;
+        color: #2d3748;
+        margin: 0;
       }
 
       .description {
         font-size: 1.1rem;
         line-height: 1.6;
-        color: #666;
+        color: #4a5568;
       }
 
       .price {
         font-size: 1.5rem;
         font-weight: bold;
         color: #2c5282;
-        margin: 1rem 0;
+      }
+
+      .thumbnail.active {
+        border-color: #2c5282;
+        opacity: 1;
+      }
+
+      @media (max-width: 768px) {
+        .product-container {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
+        .thumbnail-grid {
+          grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+          gap: 0.5rem;
+        }
+      }
+
+      .description-container {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .description-container h2 {
+        font-size: 1.5rem;
+        color: #2d3748;
+        margin-bottom: 1rem;
+      }
+
+      .description {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #4a5568;
+      }
+
+      .description :global(p) {
+        margin-bottom: 1rem;
+      }
+
+      .description :global(ul), .description :global(ol) {
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .description :global(li) {
+        margin-bottom: 0.5rem;
       }
     </style>
   </head>
-<body>
-  <Header />
-  <main>
-    <div class="product-container">
-      <div class="product-info">
-        <h1>{product.title}</h1>
-        <p class="description">{product.description}</p>
-        <AddToCart client:load variants={product.variants}/>
+  <body>
+    <Header />
+    <main>
+      <div class="product-container">
+        <div class="product-images" id="productImages">
+          <img 
+            src={defaultImages[0]} 
+            alt={product.title}
+            class="main-image"
+            id="mainImage"
+          />
+          <div class="thumbnail-grid" id="thumbnailGrid">
+            {defaultImages.map((image: string) => (
+              <img 
+                src={image} 
+                alt={product.title} 
+                class="thumbnail"
+                onclick={`document.getElementById('mainImage').src = '${image}'`}
+                onmouseover={`document.getElementById('mainImage').src = '${image}'`}
+              />
+            ))}
+          </div>
+        </div>
+        <div class="product-info">
+          <h1>{product.title}</h1>
+          <AddToCart 
+            client:load 
+            variants={product.variants}
+            initialVariantHandle={variantHandle}
+            onVariantChange={(variant) => {
+              const variantImages = variant.metadata?.images || [product.thumbnail];
+              
+              // Update main image
+              const mainImage = document.getElementById('mainImage') as HTMLImageElement;
+              if (mainImage) {
+                mainImage.src = variantImages[0];
+              }
+
+              // Update thumbnails
+              const thumbnailGrid = document.getElementById('thumbnailGrid');
+              if (thumbnailGrid) {
+                thumbnailGrid.innerHTML = variantImages.map(image => `
+                  <img 
+                    src="${image}" 
+                    alt="${product.title}" 
+                    class="thumbnail"
+                    onclick="document.getElementById('mainImage').src = '${image}'"
+                    onmouseover="document.getElementById('mainImage').src = '${image}'"
+                    style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent;"
+                    onmouseenter="this.style.opacity = '0.8'; this.style.borderColor = '#2c5282';"
+                    onmouseleave="this.style.opacity = '1'; this.style.borderColor = 'transparent';"
+                  />
+                `).join('');
+              }
+            }}
+          />
+        </div>
+
+        <div class="description-container">
+            <h2>Description</h2>
+            <div class="description" set:html={product.metadata.description} />
+          </div>
       </div>
-    </div>
-  </main>
- </body>
+    </main>
+  </body>
 </html>
+
+<script>
+  // Remove the DOMContentLoaded event listener as it's not needed anymore
+</script>
