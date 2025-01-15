@@ -15,6 +15,11 @@ export async function getProduct(productId) {
   return { product }
 }
 
+export async function getVariant(variantId) {
+  const { variant } = await medusa.variants.retrieve(variantId)
+  return { variant }
+}
+
 export async function createCart() {
   return await medusa.carts.create()
 }

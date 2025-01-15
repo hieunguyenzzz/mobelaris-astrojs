@@ -13,9 +13,11 @@ const AddToCart: React.FC<AddToCartProps> = ({
   initialVariantHandle
 }) => {
   // Find initial variant based on handle or default to first variant
-  const initialVariant = initialVariantHandle 
-    ? variants.find(v => v.metadata?.handle === initialVariantHandle)
-    : variants[0];
+  const initialVariant = variants?.length 
+    ? (initialVariantHandle 
+        ? variants.find(v => v.metadata?.handle === initialVariantHandle)
+        : variants[0])
+    : null;
 
   const [selectedVariant, setSelectedVariant] = useState(initialVariant);
   const [quantity, setQuantity] = useState(1);
