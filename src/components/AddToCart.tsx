@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import {addCartItem, createCart, getCart} from '../utils/medusa';
+import axios from 'axios';
 
 interface AddToCartProps {
   variants: any[];
@@ -50,38 +51,71 @@ const AddToCart: React.FC<AddToCartProps> = ({
     }
   };
 
+  // Add new function to validate cart
+  const validateCart = async (cartId: string) => {
+    try {
+      const cart = await getCart(cartId);
+      return cart.cart.id === cartId;
+    } catch (e) {
+      console.log("Cart validation failed", e);
+      return false;
+    }
+  };
+
   const handleAddClick = async () => {
-    setLoading(true)
-    setSuccessMessage(null)
-    setErrorMessage(null)
+    setLoading(true);
+    setSuccessMessage(null);
+    setErrorMessage(null);
 
     try {
-      let cart_id = cartId
-      if (!cart_id) {
-        const cart = await createCart()
-        cart_id = cart.cart.id
-        setCartId(cart_id)
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('cartId', cart_id)
+      // Get stored cart ID
+      let cart_id = cartId;
+
+      // Validate existing cart or create new one
+      if (cart_id) {
+        const isValid = await validateCart(cart_id);
+        if (!isValid) {
+          // If cart is invalid, remove it and create new one
+          localStorage.removeItem('cartId');
+          cart_id = null;
         }
       }
 
-      await addCartItem(cart_id, selectedVariant.id, quantity)
-      setSuccessMessage('Added to cart')
-
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('cartUpdated'))
+      // Create new cart if needed
+      if (!cart_id) {
+        const cart = await createCart();
+        cart_id = cart.cart.id;
+        setCartId(cart_id);
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('cartId', cart_id);
+        }
       }
-      
-      const updatedCart = await getCart(cart_id)
-      console.log("Updated cart", {updatedCart})
+
+      // Add item to cart
+      await addCartItem(cart_id, selectedVariant.id, quantity);
+      setSuccessMessage('Added to cart');
+
+      // Dispatch cart update event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('cartUpdated'));
+      }
+
+      // Get updated cart
+      const updatedCart = await getCart(cart_id);
+      console.log("Updated cart", {updatedCart});
     } catch (e) {
-      console.error("Error adding to cart", {e})
-      setErrorMessage('Error adding to cart')
+      console.error("Error adding to cart", e);
+      setErrorMessage('Error adding to cart. Please try again.');
+      
+      // If we get a 404, clear the cart and try again
+      if (e.response?.status === 404) {
+        localStorage.removeItem('cartId');
+        setCartId(null);
+      }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '300px' }}>
