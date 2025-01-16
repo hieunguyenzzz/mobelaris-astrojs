@@ -1,38 +1,84 @@
- ---
-const {product} = Astro.props
- ---
- 
- <div class="product-card">
-  <h2>{product.title}</h2>
-    <p>{product.description}</p>
-    <p>Price: {product.variants[0]?.prices[0]?.amount / 100} {product.variants[0]?.prices[0]?.currency_code}</p>
-   <a href={`/products/${product.id}`}>View Details</a>
+---
+const { product, regionCode } = Astro.props;
+
+// Get the first variant as default
+const defaultVariant = product.variants[0];
+
+// Get the price for the current region
+const price = defaultVariant?.prices?.find(p => p.currency_code.toLowerCase() === regionCode)?.amount || 0;
+
+// Get the first image or a placeholder
+const imageUrl = product.thumbnail || product.images?.[0]?.url || '/images/placeholder.png';
+---
+
+<div class="product-card">
+    <a href={`/${regionCode}/${defaultVariant?.metadata?.handle || ''}`}>
+        <div class="image-container">
+            <img 
+                src={imageUrl} 
+                alt={product.title}
+                loading="lazy"
+            />
+        </div>
+        <div class="product-info">
+            <h3>{product.title}</h3>
+            <p class="price">
+                {(price / 100).toLocaleString('en-US', {
+                    style: 'currency',
+                    currency: regionCode.toUpperCase()
+                })}
+            </p>
+        </div>
+    </a>
 </div>
- 
+
 <style>
     .product-card {
-        padding: 15px;
-        border: 1px solid #ddd;
+        border: 1px solid #e2e8f0;
         border-radius: 8px;
-        background-color: white;
-        text-align: center;
-    }
-    
-     .product-card h2 {
-        font-size: 1.2rem;
-        margin-bottom: 10px;
-     }
- 
-    .product-card p {
-     margin-bottom: 10px;
+        overflow: hidden;
+        transition: transform 0.2s;
     }
 
- 
-     .product-card a {
+    .product-card:hover {
+        transform: translateY(-4px);
+    }
+
+    .product-card a {
         text-decoration: none;
-        color: white;
-        background-color: #007bff;
-        padding: 8px 12px;
-        border-radius: 4px;
-     }
+        color: inherit;
+    }
+
+    .image-container {
+        aspect-ratio: 1;
+        overflow: hidden;
+    }
+
+    .image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .product-card:hover .image-container img {
+        transform: scale(1.05);
+    }
+
+    .product-info {
+        padding: 1rem;
+    }
+
+    h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+    }
+
+    .price {
+        margin: 0;
+        color: #4a5568;
+        font-weight: 600;
+    }
 </style>

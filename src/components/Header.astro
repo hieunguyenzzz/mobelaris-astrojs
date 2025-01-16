@@ -1,5 +1,6 @@
 ---
 import CartIcon from './CartIcon';
+import RegionSelector from './RegionSelector';
 ---
 
 <header>
@@ -7,7 +8,10 @@ import CartIcon from './CartIcon';
     <div class="logo">
       <a href="/">Store</a>
     </div>
-    <CartIcon client:load />
+    <div class="right-section">
+      <RegionSelector client:load />
+      <CartIcon client:load />
+    </div>
   </nav>
 </header>
 
@@ -31,5 +35,11 @@ import CartIcon from './CartIcon';
     color: white;
     font-size: 1.5rem;
     font-weight: bold;
+  }
+
+  .right-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
 </style> 

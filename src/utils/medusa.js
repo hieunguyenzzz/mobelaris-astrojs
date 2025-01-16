@@ -5,14 +5,24 @@ const MEDUSA_BACKEND_URL = import.meta.env.PUBLIC_MEDUSA_BACKEND_URL || "http://
 // Create a new Medusa client
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 })
 
-export async function getProducts() {
-  const { products } = await medusa.products.list()
-  return { products }
+export async function getRegions() {
+  const { regions } = await medusa.regions.list();
+  return regions;
 }
 
-export async function getProduct(productId) {
-  const { product } = await medusa.products.retrieve(productId)
-  return { product }
+// Modify existing functions to support regions
+export async function getProducts(regionId) {
+  const { products } = await medusa.products.list({
+    region_id: regionId
+  });
+  return { products };
+}
+
+export async function getProduct(productId, regionId) {
+  const { product } = await medusa.products.retrieve(productId, {
+    region_id: regionId
+  });
+  return { product };
 }
 
 export async function getVariant(variantId) {

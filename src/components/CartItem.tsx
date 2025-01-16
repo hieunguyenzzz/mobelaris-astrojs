@@ -44,7 +44,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, cartId, onUpdate }) => {
   return (
     <div className="cart-item">
       <div className="item-image">
-        <img src={item.thumbnail || '/placeholder.png'} alt={item.title} />
+        <img src={item.thumbnail || '/images/placeholder.png'} alt={item.title} />
       </div>
       <div className="item-details">
         <h3>{item.title}</h3>

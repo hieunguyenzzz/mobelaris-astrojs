@@ -1,0 +1,63 @@
+---
+import { getRegions, getProducts } from '../../utils/medusa';
+import Layout from '../../layouts/Layout.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import Header from '../../components/Header.astro';
+
+export async function getStaticPaths() {
+    const regions = await getRegions();
+    
+    return regions.map((region: any) => ({
+        params: { 
+            region: region.currency_code.toLowerCase()
+        },
+        props: { 
+            regionId: region.id,
+            regionCode: region.currency_code.toLowerCase()
+        }
+    }));
+}
+
+const { regionId, regionCode } = Astro.props;
+const { products } = await getProducts(regionId);
+
+// Filter out products without variants or handles
+const validProducts = products.filter((product: any) => 
+    product.variants?.length > 0 && 
+    product.variants[0]?.metadata?.handle
+);
+---
+
+<Layout title="Products">
+    <Header />
+    <main>
+        <h1>Products ({regionCode.toUpperCase()})</h1>
+        <div class="products-grid">
+            {validProducts.map((product: any) => (
+                <ProductCard 
+                    product={product}
+                    regionCode={regionCode}
+                />
+            ))}
+        </div>
+    </main>
+</Layout>
+
+<style>
+    main {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 2rem;
+    }
+</style> 
