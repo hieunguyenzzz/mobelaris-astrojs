@@ -1,6 +1,5 @@
-import React, {useState, useEffect} from 'react';
-import {addCartItem, createCart, getCart} from '../utils/medusa';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import { useCart } from '../hooks/useCart';
 
 interface AddToCartProps {
   variants: any[];
@@ -9,11 +8,10 @@ interface AddToCartProps {
 }
 
 const AddToCart: React.FC<AddToCartProps> = ({
-  variants, 
+  variants,
   onVariantChange,
   initialVariantHandle
 }) => {
-  // Find initial variant based on handle or default to first variant
   const initialVariant = variants?.length 
     ? (initialVariantHandle 
         ? variants.find(v => v.metadata?.handle === initialVariantHandle)
@@ -22,15 +20,7 @@ const AddToCart: React.FC<AddToCartProps> = ({
 
   const [selectedVariant, setSelectedVariant] = useState(initialVariant);
   const [quantity, setQuantity] = useState(1);
-  const [cartId, setCartId] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return window.localStorage.getItem('cartId');
-    }
-    return null;
-  });
-  const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { loading, successMessage, errorMessage, addToCart } = useCart();
 
   useEffect(() => {
     if (onVariantChange) {
@@ -45,76 +35,13 @@ const AddToCart: React.FC<AddToCartProps> = ({
       if (onVariantChange) {
         onVariantChange(variant);
       }
-      // Update URL to just the variant handle
       const newUrl = `/${variant.metadata?.handle || ''}`;
       window.history.pushState({}, '', newUrl);
     }
   };
 
-  // Add new function to validate cart
-  const validateCart = async (cartId: string) => {
-    try {
-      const cart = await getCart(cartId);
-      return cart.cart.id === cartId;
-    } catch (e) {
-      console.log("Cart validation failed", e);
-      return false;
-    }
-  };
-
-  const handleAddClick = async () => {
-    setLoading(true);
-    setSuccessMessage(null);
-    setErrorMessage(null);
-
-    try {
-      // Get stored cart ID
-      let cart_id = cartId;
-
-      // Validate existing cart or create new one
-      if (cart_id) {
-        const isValid = await validateCart(cart_id);
-        if (!isValid) {
-          // If cart is invalid, remove it and create new one
-          localStorage.removeItem('cartId');
-          cart_id = null;
-        }
-      }
-
-      // Create new cart if needed
-      if (!cart_id) {
-        const cart = await createCart();
-        cart_id = cart.cart.id;
-        setCartId(cart_id);
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('cartId', cart_id);
-        }
-      }
-
-      // Add item to cart
-      await addCartItem(cart_id, selectedVariant.id, quantity);
-      setSuccessMessage('Added to cart');
-
-      // Dispatch cart update event
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('cartUpdated'));
-      }
-
-      // Get updated cart
-      const updatedCart = await getCart(cart_id);
-      console.log("Updated cart", {updatedCart});
-    } catch (e) {
-      console.error("Error adding to cart", e);
-      setErrorMessage('Error adding to cart. Please try again.');
-      
-      // If we get a 404, clear the cart and try again
-      if (e.response?.status === 404) {
-        localStorage.removeItem('cartId');
-        setCartId(null);
-      }
-    } finally {
-      setLoading(false);
-    }
+  const handleAddClick = () => {
+    addToCart(selectedVariant.id, quantity);
   };
 
   return (
